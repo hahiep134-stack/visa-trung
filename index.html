@@ -807,7 +807,7 @@ canvas#dust{position:fixed;inset:0;pointer-events:none;z-index:40}
 /* =========================================================
    CẤU HÌNH — URL Web App của Google Apps Script
    ========================================================= */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxlt7fxZS1jLbzwBE-8f2XCsA2cs_Y6EhA_B3TO_BJBO9QsrLE7BxLO_fl5fWQhUQP2Zw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFRzSnA3Vz2tcadZhLdQCo7-n4JZgrPmbh1Onuaxxylp5BFkEzCQLcKu7dJbtgQlRQYQ/exec';
 
 const MAX_CHILDREN = 4;
 const DRAFT_KEY = 'visa-cn-draft-v1';
@@ -1090,12 +1090,16 @@ async function submitForm(){
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(data)
     });
-    let ok = res.ok;
-    try { const j = await res.json(); ok = ok && (j.status === 'success' || j.status === 'ignored'); } catch (_) {}
-    if (!ok) throw new Error('bad');
+    let j = null;
+    try { j = await res.json(); } catch (_) {}
+    if (!j) throw new Error('NO_JSON');
+    if (j.status === 'error') throw new Error('SCRIPT: ' + (j.message || ''));
+    if (j.status !== 'success' && j.status !== 'ignored') throw new Error('BAD_STATUS');
     showSuccess(data);
   } catch (err) {
-    toast('Chưa gửi được. Anh/chị kiểm tra kết nối mạng rồi bấm “Gửi hồ sơ” lại.', true);
+    console.error('Lỗi gửi form:', err);
+    const code = err.message === 'NO_JSON' ? 'A1' : err.message.startsWith('SCRIPT') ? 'A2' : 'N1';
+    toast(`Chưa gửi được (mã ${code}). Anh/chị kiểm tra kết nối mạng rồi bấm “Gửi hồ sơ” lại.`, true);
     $('.label', nextBtn).textContent = 'Gửi hồ sơ';
   } finally {
     submitting = false;
